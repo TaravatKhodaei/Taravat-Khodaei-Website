@@ -2,9 +2,11 @@
 
 # website settings
 website:
-  title: "Gandalf"                                # Your name
-  description: "Gandalf is a renowned wizard and scholar of Middle-earth"   # A brief slogan (optional)
-  image: img/my_image.jpg
+  title: "Welcome to Taravat Khodaei's Website"                                # Your name
+  description: "I am a PhD student in Biomedical Engineering at Case Western Reserve University, with five years of experience in biomaterials research specializing in immunometabolism engineering and immunotherapy for cancer and autoimmune diseases.
+  I was able to contribute to the acedemic society through 11 published papers in this cutting-edge field. Currently, my laboratory work focuses on developing organoid models to mimic breast cancer biorespiration, providing valuable insights into cancer metabolism and potential therapeutic interventions.
+  Through interdisciplinary research and innovative approaches, you aim to play a role in developing cancer treatment and immune system regulation methods."   # A brief slogan (optional)
+  image: img/Profile.jpg
   
   favicon: img/favicon.png
   
@@ -16,23 +18,17 @@ website:
     # your sub-pages
     left:
       - text: "Projects"
-        href: projects/index.qmd
-      - text: "Photography"
-        href: photography/index.qmd
+        href: projects/
       - text: "CV"
-        href: cv/index.qmd
+        href: cv/Taravat Khodaei's CV.pdf
     
     # your social media handles
     right:
-      - icon: folder-symlink
-        href: https://www.marvinschmitt.com/blog/website-tutorial-quarto/
-      - icon: twitter
-        href: https://twitter.com/MarvinSchmittML
       - icon: linkedin
-        href: https://www.linkedin.com/in/marvin-schmitt-a85b321a2/
+        href: https://www.linkedin.com/in/taravat-khodaei/?originalSubdomain=ir
       - icon: envelope
         aria-label: email
-        href: "mailto:mail.marvinschmitt@gmail.com"  
+        href: "mailto:txk576@case.edu"  
   
   
 
