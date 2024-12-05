@@ -20,9 +20,7 @@ website:
       - text: "Projects"
         href: projects/
       - text: "CV"
-        href: cv/"Taravat Khodaei's CV.pdf""
-    
-    # your social media handles
+        href: cv/Taravat Khodaei's CV.pdf    # your social media handles
     right:
       - icon: linkedin
         href: https://www.linkedin.com/in/taravat-khodaei/?originalSubdomain=ir
