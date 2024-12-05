@@ -20,7 +20,7 @@ website:
       - text: "Projects"
         href: projects/
       - text: "CV"
-        href: cv/Taravat Khodaei's CV.pdf
+        href: cv/"Taravat Khodaei's CV.pdf""
     
     # your social media handles
     right:
