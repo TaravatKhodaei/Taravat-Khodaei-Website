@@ -1,0 +1,228 @@
+---
+layout: page
+title: "Life Expectancy Dashboard"
+format: 
+  dashboard:
+    nav-buttons: [github]
+    github: https://github.com/your-repo/study2-dashboard
+theme: [sandstone]
+params:
+  dataset: "Study 2 Data"
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(scales)
+library(DT)
+library(gt)
+theme_set(theme_minimal(base_size = 16, base_family = "sans"))
+```
+
+
+```{r}
+#| label: load-data
+
+final_data <- readRDS("/Users/taravatkhodaii/Desktop/Project B new data/copy study 2 the final/study2_data_cleaned.rds")
+```
+
+
+```{r}
+#| label: prep-data
+
+final_data <- final_data |>
+  mutate(
+    severe_housing_cat = factor(
+      severe_housing_cat,
+      levels = c("Low", "Moderate", "High", "Very High"),
+      labels = c("Low", "Moderate", "High", "Very High") # Adjust labels if needed
+    )
+  )
+
+```
+
+
+# Overview {.sidebar}
+
+```{r}
+#| label: sidebar-content
+
+# Sidebar content setup
+sidebar_content <- tibble(
+  "Key Metrics" = c("Dataset", "Outcome Variable", "Key Predictor"),
+  "Details" = c(
+    "Study 2 Data",
+    "Life Expectancy",
+    "Severe Housing Problems"
+  )
+)
+
+# Render as a table
+library(knitr)
+kable(
+  sidebar_content,
+  col.names = c("", ""),
+  caption = "Key Details of Study 2"
+)
+```
+
+# Key Statistics
+```{r}
+#| label: summary-stats
+#| echo: false
+
+# Summary table of dataset
+summary_table <- final_data |>
+  summarize(
+    `Total Observations` = n(),
+    `Mean Life Expectancy` = mean(life_expectancy, na.rm = TRUE),
+    `Median Life Expectancy` = median(life_expectancy, na.rm = TRUE),
+    `Min Life Expectancy` = min(life_expectancy, na.rm = TRUE),
+    `Max Life Expectancy` = max(life_expectancy, na.rm = TRUE)
+  )
+
+gt(summary_table)
+
+```
+
+## Life Expectancy Distribution
+```{r}
+#| label: life-expectancy-dist
+#| echo: false
+
+# Histogram of life expectancy
+ggplot(final_data, aes(x = life_expectancy)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "orange", alpha = 0.7) +
+  labs(
+    title = "Distribution of Life Expectancy",
+    x = "Life Expectancy (years)",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+```
+
+
+# Model Results
+```{r}
+#| label: model-results
+
+# Fit models
+full_model <- lm(life_expectancy ~ severe_housing_cat + physical_inactivity + 
+                 income_inequality + air_pollution + social_associations + 
+                 preventable_hospital_stays, data = final_data)
+
+subset_model <- lm(life_expectancy ~ severe_housing_cat + physical_inactivity + 
+                   income_inequality, data = final_data)
+
+# Model summaries
+full_model_summary <- summary(full_model)
+subset_model_summary <- summary(subset_model)
+
+# Display Adjusted R-squared values
+performance_metrics <- tibble(
+  Model = c("Full Model", "Subset Model"),
+  `Adjusted R²` = c(full_model_summary$adj.r.squared, subset_model_summary$adj.r.squared)
+)
+
+gt(performance_metrics)
+
+```
+
+# Model Coefficients
+```{r}
+#| label: coef-plot
+#| echo: false
+
+# Extract coefficients for full model
+coef_full <- broom::tidy(full_model)
+
+# Coefficient plot
+ggplot(coef_full, aes(x = term, y = estimate)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Full Model Coefficients",
+    x = "Predictor",
+    y = "Estimate"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+# Data Table 
+```{r}
+#| label: data-table
+#| echo: false
+
+datatable(
+  final_data,
+  options = list(pageLength = 10),
+  rownames = FALSE
+)
+
+```
+
+# Conclusion
+---
+
+## Key Findings
+
+- **Physical Inactivity** was the strongest predictor of life expectancy, showing the most significant negative impact.
+- **Income Inequality** and **Severe Housing Problems** also had meaningful impacts on life expectancy.
+
+## Model Comparison
+
+- The **Full Model** slightly outperformed the **Subset Model**:
+  - Adjusted \(R^2\) for the Full Model: `r round(summary(full_model)$adj.r.squared, 3)`
+  - Adjusted \(R^2\) for the Subset Model: `r round(summary(subset_model)$adj.r.squared, 3)`
+
+- The Subset Model, being simpler, provides comparable interpretability while requiring fewer predictors.
+
+## Implications
+
+- Public health interventions targeting **physical inactivity** could have the most significant impact on improving life expectancy.
+- Addressing **income inequality** and **housing problems** could further enhance societal health outcomes.
+
+
+```{css echo=FALSE}
+.embed-container {
+    position: relative;
+    padding-bottom: 129%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+}
+.embed-container iframe,
+.embed-container object,
+.embed-container embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+```
+
+```{=html}
+<p class="text-center">
+  <a class="btn btn-primary btn-lg cv-download" href="`r rmarkdown::metadata$cv$pdf`" target="_blank">
+    <i class="fa-solid fa-file-arrow-down"></i>&ensp;Download current CV
+  </a>
+</p>
+<div class="embed-container">
+  <iframe src="`r rmarkdown::metadata$cv$pdf`#toolbar=0" style="border: 0.5px;width: 100%;"></iframe>
+</div>
+```
+
+
+
+
+
