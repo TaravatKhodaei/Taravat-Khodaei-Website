@@ -1,0 +1,558 @@
+---
+title: "Factors Impacting Life Expectancy"
+format:
+  dashboard:
+    nav-buttons: [github]
+    github: https://github.com/your-repo/study2-dashboard
+theme: [sandstone]
+params:
+  dataset: "Study 2 Data"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(scales)
+library(DT)
+library(gt)
+library(ggplot2)
+
+theme_set(theme_minimal(base_size = 16, base_family = "sans"))
+```
+
+
+```{r}
+#| label: load-data
+
+final_data <- readRDS("/Users/taravatkhodaii/Desktop/Project B new data/copy study 2 the final/study2_data_cleaned.rds")
+```
+
+
+```{r}
+#| label: prep-data
+
+final_data <- final_data |>
+  mutate(
+    severe_housing_cat = factor(
+      severe_housing_cat,
+      levels = c("Low", "Moderate", "High", "Very High"),
+      labels = c("Low", "Moderate", "High", "Very High") # Adjust labels if needed
+    )
+  )
+
+```
+## Predictors Overview {.sidebar}
+---
+
+::: {.callout-note style="background-color: #ffcc99; border-left: 6px solid #ff6600;"}
+### **Key Predictors**
+
+
+- **Severe Housing Problems** (Categorical):
+  - Categories: Low, Moderate, High, Very High
+- **Physical Inactivity** (Numerical): Percentage of adults inactive.
+- **Income Inequality** (Numerical): Measured by the Gini coefficient.
+- **Air Pollution** (Numerical): Particulate matter (µg/m³).
+- **Social Associations** (Numerical): Membership organizations per 10k population.
+- **Preventable Hospital Stays** (Numerical): Per 100,000 Medicare enrollees.
+
+**Purpose**:
+These predictors provide diverse insights into how environmental, behavioral, and societal factors influence life expectancy.
+:::
+
+---
+
+# Overview {.sidebar}
+
+```{r}
+#| label: sidebar-content
+
+# Sidebar content setup
+sidebar_content <- tibble(
+  "Key Metrics" = c("Dataset", "Outcome Variable", "Key Predictor"),
+  "Details" = c(
+    "CHR-2024",
+    "Life Expectancy",
+    "Severe Housing Problems"
+  )
+)
+
+# Render as a table
+library(knitr)
+kable(
+  sidebar_content,
+  col.names = c("", ""),
+  caption = "Key Details of Study"
+)
+```
+
+
+# Key Statistics
+
+
+<div style="position: relative; left: 50%; width: 100vw; margin-left: -50vw; background:#001f3f; padding:1px; color:#ffffff; font-size:14px; text-align:center;">
+<h3 style="font-size:13px; margin:0;">Summary of Life Expectancy Data</h3>
+</div>
+
+
+## Row {height="40%"}
+
+### Column {width="50%"}
+
+```{r}
+#| label: summary-stats
+#| echo: false
+
+# Create the summary table
+library(gt)
+summary_table <- final_data |>
+  summarize(
+    `Total Observations` = n(),
+    `Mean Life Expectancy` = mean(life_expectancy, na.rm = TRUE),
+    `Median Life Expectancy` = median(life_expectancy, na.rm = TRUE),
+    `Min Life Expectancy` = min(life_expectancy, na.rm = TRUE),
+    `Max Life Expectancy` = max(life_expectancy, na.rm = TRUE)
+  )
+
+# Format the table using gt
+summary_table |>
+  gt() |>
+  tab_header(
+    title = md("**Summary Statistics**"),
+    subtitle = md("*Life Expectancy Analysis*")
+  ) |>
+  fmt_number(
+    columns = everything(),
+    decimals = 2
+  ) |>
+  tab_style(
+    style = cell_text(align = "right", weight = "bold"),
+    locations = cells_column_labels()
+  ) |>
+  tab_options(
+    table.font.size = 12,
+    column_labels.font.size = 12,
+    table.width = pct(90)
+  )
+
+```
+
+
+
+<div style="position: relative; left: 50%; width: 100vw; margin-left: -50vw; background:#001f3f; padding:1px; color:#ffffff; font-size:14px; text-align:center;">
+<h3 style="font-size:13px; margin:0;">Life Expectancy distribution and Q-Q plot</h3>
+</div>
+
+
+## Life Expectancy Distribution
+
+```{r}
+#| label: life-expectancy-dist
+#| echo: false
+
+# Enhanced histogram of life expectancy
+ggplot(final_data, aes(x = life_expectancy)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "darkblue", alpha = 0.8) +
+  labs(
+    title = "Distribution of Life Expectancy",
+    x = "Life Expectancy (years)",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),  # Center and enlarge title
+    axis.title = element_text(size = 14),  # Increase axis title size
+    axis.text = element_text(size = 12)    # Increase axis text size
+  )
+
+```
+
+### q-q plot for life expectency distribution
+
+```{r}
+#| label: life-expectancy-q-q
+#| echo: false
+
+ggplot(final_data, aes(sample = life_expectancy)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(
+    title = "Q-Q Plot of Life Expectancy",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),  # Center title
+    axis.title = element_text(size = 12),  # Adjust axis title size
+    axis.text = element_text(size = 10)  # Adjust axis text size
+  )
+
+```
+
+# Relationships
+
+<div style="position: relative; left: 50%; width: 100vw; margin-left: -50vw; background:#001f3f; padding:1px; color:#ffffff; font-size:14px; text-align:center;">
+<h3 style="font-size:13px; margin:0;">Relationship of Life Expectancy Data with Predictor Data</h3>
+</div>
+```{r}
+#| label: relationships
+#| eco: false
+library(ggplot2)
+library(patchwork)  # install.packages("patchwork") if not installed
+
+# Ensure final_data and key_and_others are defined
+key_and_others <- c("severe_housing_problems","physical_inactivity","income_inequality",
+                    "air_pollution","social_associations","preventable_hospital_stays")
+
+plot_list <- list()
+
+for (i in seq_along(key_and_others)) {
+  var <- key_and_others[i]
+  
+  p <- ggplot(final_data, aes_string(x = var, y = "life_expectancy")) +
+    geom_point(color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(
+      title = paste("Life Expectancy vs and", var),
+      x = var,
+      y = "Life Expectancy"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 7, face = "bold"),
+      axis.title = element_text(size = 6.5),
+      axis.text = element_text(size = 6)
+    )
+  
+  plot_list[[i]] <- p
+}
+
+combined_plot <- (plot_list[[1]] | plot_list[[2]] | plot_list[[3]]) /
+                 (plot_list[[4]] | plot_list[[5]] | plot_list[[6]])
+
+print(combined_plot)
+
+```
+
+# Model building & Performance
+## Layout Definition
+
+### Row {height="100%"}
+
+#### Column {width="100%"} 
+<div style="position: relative; left: 50%; width: 100vw; margin-left: -50vw; background:#001f3f; padding:1px; color:#ffffff; font-size:14px; text-align:center;">
+<h3 style="font-size:13px; margin:0;">Model Development (Training Results)</h3>
+</div>
+
+
+## Distribution of Life Expectancy
+
+```{r}
+#| label: model-normality
+#| eco: false
+# Set seed for reproducibility
+set.seed(561) 
+# Create the training sample (75% of the data)
+training_sample <- final_data |>
+  slice_sample(prop = 0.75)
+
+# Create the test sample (remaining 25% of the data)
+test_sample <- anti_join(final_data, training_sample, by = "fipscode")
+
+```
+
+```{r}
+#| label: develop_model
+#| eco: false
+# Fit the full model
+full_model <- lm(life_expectancy ~ severe_housing_cat + physical_inactivity + 
+                   income_inequality + air_pollution + social_associations + 
+                   preventable_hospital_stays, data = training_sample)
+
+# Fit the subset model
+subset_model <- lm(life_expectancy ~ severe_housing_cat + physical_inactivity + income_inequality, 
+                   data = training_sample)
+
+
+```
+
+### Row {height="20%"}
+#### Column {width="50%"}
+
+
+```{r}
+#| label: full_model-results
+#| eco: false
+# Full Model Results
+full_model_summary <- summary(full_model)
+
+# Create a tibble for full model results
+full_results <- as_tibble(coef(full_model_summary), rownames = "Predictor") |>
+  rename(
+    Estimate = Estimate,
+    `Std. Error` = `Std. Error`,
+    `t value` = `t value`,
+    `P-value` = `Pr(>|t|)`
+  )
+
+# Display the full model results
+library(gt)
+full_results |>
+  gt() |>
+  tab_header(
+    title = md("**Full Model Coefficients**"),
+    subtitle = md("Results for the full regression model with all predictors")
+  ) |>
+  fmt_number(
+    columns = c(Estimate, `Std. Error`, `t value`),
+    decimals = 3
+  ) |>
+  fmt_number(
+    columns = `P-value`,
+    decimals = 4
+  ) |>
+  cols_label(
+    Estimate = "Coefficient",
+    `Std. Error` = "Standard Error",
+    `t value` = "t-Value",
+    `P-value` = "P-Value"
+  ) |>
+  tab_options(
+    table.font.size = px(11.5),
+    table.width = px(350)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = "darkblue"),
+    locations = cells_body(
+      columns = "Predictor",
+      rows = `P-value` <= 0.05
+    )
+  )
+
+
+```
+
+#### Column {width="50%"}
+
+```{r}
+#| label: subset_model-results
+#| eco: false
+# Subset Model Results
+subset_model_summary <- summary(subset_model)
+
+# Create a tibble for subset model results
+subset_results <- as_tibble(coef(subset_model_summary), rownames = "Predictor") |>
+  rename(
+    Estimate = Estimate,
+    `Std. Error` = `Std. Error`,
+    `t value` = `t value`,
+    `P-value` = `Pr(>|t|)`
+  )
+
+# Display the subset model results
+subset_results |>
+  gt() |>
+  tab_header(
+    title = md("**Subset Model Coefficients**"),
+    subtitle = md("Results for the regression model with a subset of predictors")
+  ) |>
+  fmt_number(
+    columns = c(Estimate, `Std. Error`, `t value`),
+    decimals = 3
+  ) |>
+  fmt_number(
+    columns = `P-value`,
+    decimals = 4
+  ) |>
+  cols_label(
+    Estimate = "Coefficient",
+    `Std. Error` = "Standard Error",
+    `t value` = "t-Value",
+    `P-value` = "P-Value"
+  ) |>
+  tab_options(
+    table.font.size = px(11.5),
+    table.width = px(350)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = "darkblue"),
+    locations = cells_body(
+      columns = "Predictor",
+      rows = `P-value` <= 0.05
+    )
+  )
+
+```
+
+
+
+### Row {height="70%"}
+#### Column {width="50%"}
+```{r}
+#| label: coefficients
+#| eco: false
+# Extract coefficients for full model
+coef_full <- broom::tidy(full_model)
+
+# Coefficient plot
+ggplot(coef_full, aes(x = reorder(term, estimate), y = estimate)) +
+  geom_col(fill = "steelblue", color = "black", alpha = 0.8) +
+  coord_flip() +
+  labs(
+    title = "Full Model Coefficients",
+    subtitle = "Visualizing the impact of predictors in the full model",
+    x = "Predictor",
+    y = "Estimate"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.2, face = "bold", size = 25),
+    plot.subtitle = element_text(hjust = -0.4, size = 15),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  )
+
+```
+
+#### Column {width="50%"}
+```{r}
+#| label: histogram for distribution
+#| eco: false
+#| 
+# Histogram with density curve for life expectancy
+ggplot(training_sample, aes(x = life_expectancy)) +
+  geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+  geom_density(color = "red", size = 1) +
+  labs(
+    title = "Distribution of Life Expectancy",
+    x = "Life Expectancy",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 25, face = "bold"),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 16)
+  )
+```
+
+```{r}
+#| label: predictions
+#| eco: false
+# Generate predictions
+test_sample$predicted_full <- predict(full_model, newdata = test_sample)
+test_sample$predicted_subset <- predict(subset_model, newdata = test_sample)
+
+# Handle missing values
+test_sample_clean <- test_sample %>%
+  filter(!is.na(life_expectancy) & !is.na(predicted_full) & !is.na(predicted_subset))
+
+# Calculate RMSE
+if (nrow(test_sample_clean) > 0) {
+  rmse_full <- sqrt(mean((test_sample_clean$life_expectancy - test_sample_clean$predicted_full)^2))
+  rmse_subset <- sqrt(mean((test_sample_clean$life_expectancy - test_sample_clean$predicted_subset)^2))
+} else {
+  rmse_full <- NA
+  rmse_subset <- NA
+}
+
+```
+
+
+### Row {height="10%"}
+#### Column {width="60%"}
+
+<div style="position: relative; left: 50%; width: 100vw; margin-left: -50vw; background:#001f3f; padding:1px; color:#ffffff; font-size:14px; text-align:center;">
+<h3 style="font-size:13px; margin:0;">Model Assessment (Testing Results)</h3>
+</div>
+
+```{r}
+#| label: calculate-metrics
+#| include: false
+
+# Calculate RMSE for both models
+rmse_full <- sqrt(mean((test_sample_clean$life_expectancy - test_sample_clean$predicted_full)^2))
+rmse_subset <- sqrt(mean((test_sample_clean$life_expectancy - test_sample_clean$predicted_subset)^2))
+
+# Calculate MAE for both models
+mae_full <- mean(abs(test_sample_clean$life_expectancy - test_sample_clean$predicted_full))
+mae_subset <- mean(abs(test_sample_clean$life_expectancy - test_sample_clean$predicted_subset))
+
+```
+
+
+```{r}
+
+#| label: model-performance-table
+#| echo: false
+
+# Calculate Adjusted R-squared
+adj_r_squared_full <- summary(full_model)$adj.r.squared
+adj_r_squared_subset <- summary(subset_model)$adj.r.squared
+
+# Prepare a summary table
+performance_table <- tibble(
+  Metric = c("Adjusted R-squared", "RMSE", "MAE"),
+  `Full Model` = c(
+    round(adj_r_squared_full, 3),
+    round(rmse_full, 3),
+    round(mae_full, 3)
+  ),
+  `Subset Model` = c(
+    round(adj_r_squared_subset, 3),
+    round(rmse_subset, 3),
+    round(mae_subset, 3)
+  )
+)
+
+# Display the performance table using gt
+library(gt)
+performance_table |>
+  gt() |>
+  tab_header(
+    title = md("**Model Assessment Metrics**"),
+    subtitle = md("Comparison of Full and Subset Models")
+  ) |>
+  fmt_number(
+    columns = c(`Full Model`, `Subset Model`),
+    decimals = 3
+  ) |>
+  cols_label(
+    Metric = "Metric",
+    `Full Model` = "Full Model",
+    `Subset Model` = "Subset Model"
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(
+      columns = everything(),
+      rows = Metric == "Adjusted R-squared"
+    )
+  ) |>
+  tab_options(
+    table.font.size = px(11.5)   # Adjust the font size here (in pixels)
+  )
+
+
+```
+
+# Data Table 
+
+```{r}
+#| label: data-table
+#| echo: false
+
+datatable(
+  final_data,
+  options = list(pageLength = 10),
+  rownames = FALSE
+)
+
+```
+
+

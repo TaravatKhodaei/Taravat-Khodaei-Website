@@ -17,12 +17,12 @@ website:
     
     # your sub-pages
     left:
-      - text: "Projects"
-        href: projects/
+      - text: "Report for Study 2"
+        href: report/
       - text: "CV"
         href: docs/cv/Taravat Khodaei's CV.pdf # your social media handles
       - text: "Dashboard"
-        href: /dashboard
+        href: /dashboardfinal
     right:
       - icon: linkedin
         href: https://www.linkedin.com/in/taravat-khodaei/?originalSubdomain=ir
